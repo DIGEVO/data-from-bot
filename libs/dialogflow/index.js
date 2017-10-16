@@ -19,7 +19,10 @@ const self = module.exports = {
         const cachedData = cache.get(req.body.sessionid);
 
         if (!cachedData.intentsArr) {
-            res.render('tokenForm', { title: process.env.TITLE, errors: [{ msg: 'Por favor, vuelva a intentarlo.' }] });
+            res.render('tokenForm', {
+                title: process.env.TITLE,
+                errors: [{ msg: 'Por favor, vuelva a intentarlo.' }]
+            });
             return;
         }
 
@@ -33,15 +36,21 @@ const self = module.exports = {
             return;
         }
 
+        //fix si creo una función para esta operación, ocurren problemas con res.end, res.writeHead, etc
+        //processPromises(ids, cachedData.token, res, req);
         Promise.all(ids.map(id => getPromiseRequest(id, cachedData.token)))
             .then(values => {
-                const ids = values.map(str => JSON.parse(str).id);
+                const csvArr = values.map(str => processIntent(JSON.parse(str)));
+                const filename = new Date().toISOString().replace(/[:.]/g, '-');
 
-                const str = ids.join(' | ');
-                res.send(`NOT IMPLEMENTED: Intents Details ${str ? str : 'empty'}`);
+                res.writeHead(200, {
+                    'Content-Type': 'application/force-download',
+                    'Content-disposition': `attachment; filename=${filename}.csv`
+                });
+
+                res.end(csvArr.join('\n'));
             })
             .catch(error => processError(error, req, res));
-
     }
 };
 
@@ -67,4 +76,21 @@ function getPromiseRequest(id, token) {
     return rp.get(
         process.env.URL_ID.replace(':id', id),
         { 'auth': { 'bearer': token } });
+}
+
+function processIntent(intent) {
+    
+    // const arr = intent.userSays.map(o => {
+    //     return o.data.map(o1 => o1.text).join('');
+    // });
+
+    // console.log(arr);
+
+    const arr2 = intent.responses.map(o => {
+        return o.speech
+    });
+
+    console.log(arr2);
+
+    return `${intent.id};algo;algo`;
 }

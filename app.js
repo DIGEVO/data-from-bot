@@ -6,10 +6,6 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var expressValidator = require('express-validator');
 var addRequestId = require('express-request-id');
-//var session = require('express-session');
-//var RedisStore = require('connect-redis')(session);
-// var redis = require('redis');
-// var client = redis.createClient(6379, 'localhost');
 
 var index = require('./routes/index');
 var intents = require('./routes/intents');
@@ -19,8 +15,6 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 
-//app.set('trust proxy', 1) // trust first proxy
-
 app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));
 app.use(bodyParser.json());
@@ -28,22 +22,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(expressValidator());
 app.use(addRequestId());
 app.use(cookieParser());
-// app.use(session({
-//   secret: process.env.SECRET,
-//   //store: new RedisStore({ client: client }),
-//   resave: false,
-//   saveUninitialized: true,
-//   cookie: { secure: true }
-// }));
-
-// //TODO revisar esto. llamar a la vista de error.
-// app.use((req, res, next) => {
-//   if (!req.session) {
-//     return next(new Error('Problemas con la sesión!'));
-//   }
-//   next();
-// })
-
 
 app.use(express.static(path.join(__dirname, 'public')));
 
