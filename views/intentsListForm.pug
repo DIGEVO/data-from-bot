@@ -1,0 +1,22 @@
+extends layout
+
+block content
+  h2 Por favor, seleccione las intenciones a descargar
+  | <br>
+
+  div(class='container center_div width_90')
+    - var msg = '';
+    if errors
+      for error in errors
+        - msg= msg + error.msg + '<br>';
+
+    form(class='form-group' method='POST' action='/intents/details')
+        ul(id='intentslist' class='height-limiter')
+            each obj in intentsArr
+                li
+                    input(type='checkbox' name='id' value=obj.id) 
+                    |   #{obj.name}
+        | <br>
+        button(type='submit' class='btn btn-primary') Descargar
+        input(type='hidden' name='sessionid' value=sessionid)
+        div(class="form-control-feedback") !{msg}

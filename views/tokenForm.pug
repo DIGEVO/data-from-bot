@@ -1,0 +1,18 @@
+extends layout
+
+block content
+  h2 Obtener intenciones según token de acceso al agente
+  | <br>
+
+  div(class='container center_div width_30')
+    - var msg = '';
+    if errors
+      for error in errors
+        - msg= msg + error.msg + '<br>';
+
+    form(class='form-inline' autocomplete='off' method='POST' action='')
+      input(type='text' class='form-control mb-2 mr-sm-2 mb-sm-0' id='token' name='token' placeholder='Token de acceso')
+      button(type='submit' class='btn btn-primary') Cargar
+      div(class="form-control-feedback") !{msg}
+
+
