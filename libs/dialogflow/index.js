@@ -16,9 +16,9 @@ const self = module.exports = {
 
     processIds(req, res) {
         const ids = [].concat(req.body.id || []);
-        const intentsArr = cache.get(req.body.sessionid);
+        const cachedData = cache.get(req.body.sessionid);
 
-        if (!intentsArr) {
+        if (!cachedData.intentsArr) {
             res.render('tokenForm', { title: process.env.TITLE, errors: [{ msg: 'Por favor, vuelva a intentarlo.' }] });
             return;
         }
@@ -26,22 +26,28 @@ const self = module.exports = {
         if (ids.length == 0) {
             res.render('intentsListForm', {
                 title: process.env.TITLE,
-                intentsArr: intentsArr,
+                intentsArr: cachedData.intentsArr,
                 sessionid: req.body.sessionid,
                 errors: [{ msg: 'Debe seleccionar al menos una intención.' }]
             });
             return;
         }
 
-        
-        const str = ids.join(' | ');
-        res.send(`NOT IMPLEMENTED: Intents Details "${req.body.sessionid}" ${str ? str : 'empty'}`);
+        Promise.all(ids.map(id => getPromiseRequest(id, cachedData.token)))
+            .then(values => {
+                const ids = values.map(str => JSON.parse(str).id);
+
+                const str = ids.join(' | ');
+                res.send(`NOT IMPLEMENTED: Intents Details ${str ? str : 'empty'}`);
+            })
+            .catch(error => processError(error, req, res));
+
     }
 };
 
 function processData(data, req, res) {
     const intentsArr = JSON.parse(data).map(o => ({ id: o.id, name: o.name }));
-    cache.set(req.id, intentsArr);
+    cache.set(req.id, { token: req.body.token, intentsArr: intentsArr });
 
     res.render('intentsListForm', {
         title: process.env.TITLE,
@@ -55,4 +61,10 @@ function processError(error, req, res) {
     const err = JSON.parse(error.error);
     error.status = err.status.code;
     res.render('error', { message: err.status.errorDetails, error: error });
+}
+
+function getPromiseRequest(id, token) {
+    return rp.get(
+        process.env.URL_ID.replace(':id', id),
+        { 'auth': { 'bearer': token } });
 }
