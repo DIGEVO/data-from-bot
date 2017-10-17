@@ -40,7 +40,8 @@ const self = module.exports = {
         //processPromises(ids, cachedData.token, res, req);
         Promise.all(ids.map(id => getPromiseRequest(id, cachedData.token)))
             .then(values => {
-                const csvArr = values.map(str => processIntent(JSON.parse(str)));
+                const csvArr = values.map(str =>
+                    processIntent(JSON.parse(str.replace(/\n/g, ' ').replace(/\x5C\x6E/g, ' '))));
                 const filename = new Date().toISOString().replace(/[:.]/g, '-');
                 res.writeHead(200, {
                     'Content-Type': 'application/force-download',
