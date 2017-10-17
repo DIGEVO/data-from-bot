@@ -6,6 +6,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var expressValidator = require('express-validator');
 var addRequestId = require('express-request-id');
+var helmet = require('helmet');
 
 var index = require('./routes/index');
 var intents = require('./routes/intents');
@@ -22,6 +23,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(expressValidator());
 app.use(addRequestId());
 app.use(cookieParser());
+app.use(helmet());
 
 app.use(express.static(path.join(__dirname, 'public')));
 
