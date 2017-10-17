@@ -14,7 +14,7 @@ block content
         ul(id='intentslist' class='height-limiter')
             each obj in intentsArr
                 li
-                    input(type='checkbox' name='id' value=obj.id) 
+                    input(type='checkbox' name='id' value=obj.id checked) 
                     |   #{obj.name}
         | <br>
         button(type='submit' class='btn btn-primary') Descargar

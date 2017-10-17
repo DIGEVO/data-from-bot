@@ -47,7 +47,7 @@ const self = module.exports = {
                     'Content-disposition': `attachment; filename=${filename}.csv`
                 });
 
-                const header = 'INTENT ID;INTENT NAME;TYPE;TEXT\n';
+                const header = 'INTENT ID|INTENT NAME|TYPE|TEXT\n';
                 res.end(`${header}${csvArr.join('\n')}`);
             })
             .catch(error => processError(error, req, res));
@@ -81,7 +81,7 @@ function getPromiseRequest(id, token) {
 function processIntent(intent) {
     const userSaysCsv = intent.userSays
         .map(o => o.data.map(o1 => o1.text).join(''))
-        .map(s => `${intent.id};${intent.name};User Says;${s}`)
+        .map(s => `${intent.id}|${intent.name}|User Says|${s}`)
         .join('\n');
 
     const responses = intent.responses
@@ -89,7 +89,7 @@ function processIntent(intent) {
 
     const responsesCsv = [].concat
         .apply([], responses)
-        .map(s => `${intent.id};${intent.name};Response;${s}`)
+        .map(s => `${intent.id}|${intent.name}|Response|${s}`)
         .join('\n');
 
     return [userSaysCsv, responsesCsv].filter(s => s).join('\n');
