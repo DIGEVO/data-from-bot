@@ -42,13 +42,13 @@ const self = module.exports = {
             .then(values => {
                 const csvArr = values.map(str => processIntent(JSON.parse(str)));
                 const filename = new Date().toISOString().replace(/[:.]/g, '-');
-
                 res.writeHead(200, {
                     'Content-Type': 'application/force-download',
                     'Content-disposition': `attachment; filename=${filename}.csv`
                 });
 
-                res.end(csvArr.join('\n'));
+                const header = 'INTENT ID;INTENT NAME;TYPE;TEXT\n';
+                res.end(`${header}${csvArr.join('\n')}`);
             })
             .catch(error => processError(error, req, res));
     }
@@ -79,18 +79,18 @@ function getPromiseRequest(id, token) {
 }
 
 function processIntent(intent) {
-    
-    // const arr = intent.userSays.map(o => {
-    //     return o.data.map(o1 => o1.text).join('');
-    // });
+    const userSaysCsv = intent.userSays
+        .map(o => o.data.map(o1 => o1.text).join(''))
+        .map(s => `${intent.id};${intent.name};User Says;${s}`)
+        .join('\n');
 
-    // console.log(arr);
+    const responses = intent.responses
+        .map(o => [].concat.apply([], o.messages.map(m => [].concat(m.speech))));
 
-    const arr2 = intent.responses.map(o => {
-        return o.speech
-    });
+    const responsesCsv = [].concat
+        .apply([], responses)
+        .map(s => `${intent.id};${intent.name};Response;${s}`)
+        .join('\n');
 
-    console.log(arr2);
-
-    return `${intent.id};algo;algo`;
+    return [userSaysCsv, responsesCsv].filter(s => s).join('\n');
 }
