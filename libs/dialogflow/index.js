@@ -41,14 +41,14 @@ const self = module.exports = {
         Promise.all(ids.map(id => getPromiseRequest(id, cachedData.token)))
             .then(values => {
                 const csvArr = values.map(str =>
-                    processIntent(JSON.parse(str.replace(/\n/g, ' ').replace(/\x5C\x6E/g, ' '))));
+                    processIntent(JSON.parse(str.replace(/\n/g, ' ').replace(/\x5C\x6E/g, '|'))));
                 const filename = new Date().toISOString().replace(/[:.]/g, '-');
                 res.writeHead(200, {
                     'Content-Type': 'application/force-download',
                     'Content-disposition': `attachment; filename=${filename}.csv`
                 });
-
-                const header = 'INTENT ID|INTENT NAME|TYPE|TEXT\n';
+                const S = String.fromCharCode(process.env.SEPARATOR);
+                const header = `INTENT ID${S}INTENT NAME${S}TYPE${S}TEXT\n`;
                 res.end(`${header}${csvArr.join('\n')}`);
             })
             .catch(error => processError(error, req, res));
@@ -80,9 +80,10 @@ function getPromiseRequest(id, token) {
 }
 
 function processIntent(intent) {
+    const S = String.fromCharCode(process.env.SEPARATOR);
     const userSaysCsv = intent.userSays
         .map(o => o.data.map(o1 => o1.text).join(''))
-        .map(s => `${intent.id}|${intent.name}|User Says|${s}`)
+        .map(s => `${intent.id}${S}${intent.name}${S}User Says${S}${s}`)
         .join('\n');
 
     const responses = intent.responses
@@ -90,7 +91,7 @@ function processIntent(intent) {
 
     const responsesCsv = [].concat
         .apply([], responses)
-        .map(s => `${intent.id}|${intent.name}|Response|${s}`)
+        .map(s => `${intent.id}${S}${intent.name}${S}Response${S}${s}`)
         .join('\n');
 
     return [userSaysCsv, responsesCsv].filter(s => s).join('\n');
