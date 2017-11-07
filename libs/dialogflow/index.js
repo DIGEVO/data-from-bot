@@ -40,15 +40,20 @@ const self = module.exports = {
         //processPromises(ids, cachedData.token, res, req);
         Promise.all(ids.map(id => getPromiseRequest(id, cachedData.token)))
             .then(values => {
-                const csvArr = values.map(str =>
-                    processIntent(JSON.parse(str.replace(/\n/g, ' ').replace(/\x5C\x6E/g, '|'))));
+                const csvArr = values.map(str => {
+                    const intent = JSON.parse(str.replace(/\n/g, ' ').replace(/\x5C\x6E/g, '|'));
+                    return processIntent(intent, cachedData.intentsArr.find(o => o.id === intent.id));
+                });
+
                 const filename = new Date().toISOString().replace(/[:.]/g, '-');
+
                 res.writeHead(200, {
                     'Content-Type': 'application/force-download',
                     'Content-disposition': `attachment; filename=${filename}.csv`
                 });
+
                 const S = String.fromCharCode(process.env.SEPARATOR);
-                const header = `INTENT ID${S}INTENT NAME${S}TYPE${S}TEXT\n`;
+                const header = `INTENT ID${S}INTENT NAME${S}TYPE${S}TEXT${S}EVENTOS${S}ACCIONES${S}PARÁMETROS\n`;
                 res.end(`${header}${csvArr.join('\n')}`);
             })
             .catch(error => processError(error, req, res));
@@ -56,7 +61,14 @@ const self = module.exports = {
 };
 
 function processData(data, req, res) {
-    const intentsArr = JSON.parse(data).map(o => ({ id: o.id, name: o.name }));
+    const intentsArr = JSON.parse(data).map(o =>
+        ({
+            id: o.id,
+            name: o.name,
+            events: o.events.map(e => e.name).join(),
+            parameters: o.parameters.map(p => `${p.name}-${p.dataType}`).join(),
+            actions: o.actions.join()
+        }));
     cache.set(req.id, { token: req.body.token, intentsArr: intentsArr });
 
     res.render('intentsListForm', {
@@ -79,11 +91,12 @@ function getPromiseRequest(id, token) {
         { 'auth': { 'bearer': token } });
 }
 
-function processIntent(intent) {
+function processIntent(intent, refIntent) {
     const S = String.fromCharCode(process.env.SEPARATOR);
+
     const userSaysCsv = intent.userSays
         .map(o => o.data.map(o1 => o1.text).join(''))
-        .map(s => `${intent.id}${S}${intent.name}${S}User Says${S}${s}`)
+        .map(s => `${intent.id}${S}${intent.name}${S}User Says${S}${s}${S}${refIntent.events}${S}${refIntent.actions}${S}${refIntent.parameters}`)
         .join('\n');
 
     const responses = intent.responses
@@ -91,7 +104,7 @@ function processIntent(intent) {
 
     const responsesCsv = [].concat
         .apply([], responses)
-        .map(s => `${intent.id}${S}${intent.name}${S}Response${S}${s}`)
+        .map(s => `${intent.id}${S}${intent.name}${S}Response${S}${s}${S}${refIntent.events}${S}${refIntent.actions}${S}${refIntent.parameters}`)
         .join('\n');
 
     return [userSaysCsv, responsesCsv].filter(s => s).join('\n');
