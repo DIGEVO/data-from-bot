@@ -53,7 +53,7 @@ const self = module.exports = {
                 });
 
                 const S = String.fromCharCode(process.env.SEPARATOR);
-                const header = `INTENT ID${S}INTENT NAME${S}TYPE${S}TEXT${S}EVENTOS${S}ACCIONES${S}PARÁMETROS\n`;
+                const header = `INTENT ID${S}INTENT NAME${S}TYPE${S}TEXT\n`;
                 res.end(`${header}${csvArr.join('\n')}`);
             })
             .catch(error => processError(error, req, res));
@@ -61,13 +61,14 @@ const self = module.exports = {
 };
 
 function processData(data, req, res) {
+    //
     const intentsArr = JSON.parse(data).map(o =>
         ({
             id: o.id,
             name: o.name,
-            events: o.events.map(e => e.name).join(),
-            parameters: o.parameters.map(p => `${p.name}-${p.dataType}`).join(),
-            actions: o.actions.join()
+            events: o.events.map(e => e.name),
+            parameters: o.parameters.map(p => JSON.stringify(p)),
+            actions: o.actions
         }));
     cache.set(req.id, { token: req.body.token, intentsArr: intentsArr });
 
@@ -96,7 +97,7 @@ function processIntent(intent, refIntent) {
 
     const userSaysCsv = intent.userSays
         .map(o => o.data.map(o1 => o1.text).join(''))
-        .map(s => `${intent.id}${S}${intent.name}${S}User Says${S}${s}${S}${refIntent.events}${S}${refIntent.actions}${S}${refIntent.parameters}`)
+        .map(s => `${intent.id}${S}${intent.name}${S}User Says${S}${s}`)
         .join('\n');
 
     const responses = intent.responses
@@ -104,8 +105,20 @@ function processIntent(intent, refIntent) {
 
     const responsesCsv = [].concat
         .apply([], responses)
-        .map(s => `${intent.id}${S}${intent.name}${S}Response${S}${s}${S}${refIntent.events}${S}${refIntent.actions}${S}${refIntent.parameters}`)
+        .map(s => `${intent.id}${S}${intent.name}${S}Response${S}${s}`)
         .join('\n');
 
-    return [userSaysCsv, responsesCsv].filter(s => s).join('\n');
+    const eventsCsv = refIntent.events
+        .map(e => `${intent.id}${S}${intent.name}${S}Event${S}${e}`)
+        .join('\n');
+
+    const actionsCsv = refIntent.actions
+        .map(a => `${intent.id}${S}${intent.name}${S}Action${S}${a}`)
+        .join('\n');
+
+    const parametersCsv = refIntent.parameters
+        .map(p => `${intent.id}${S}${intent.name}${S}Parameter${S}${p}`)
+        .join('\n');
+
+    return [userSaysCsv, responsesCsv, eventsCsv, actionsCsv, parametersCsv].filter(s => s).join('\n');
 }
